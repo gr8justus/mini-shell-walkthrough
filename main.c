@@ -14,6 +14,7 @@
 
 void free_cmds(char **cmds);
 char **tokenize(char *str, const char *delim);
+void get_cmd_path(char **pathname);
 extern char **environ; 
 
 int main(int argc, char *argv[])
@@ -57,13 +58,21 @@ int main(int argc, char *argv[])
 		if (commands == NULL)
 			continue;
 
-		/* check for valid executable files */
+		/* check for valid executable files as is*/
 		if (access(commands[0], X_OK) == -1)
 		{
-			fprintf(stderr, "%s: %lu: %s: not found\n", argv[0], cmd_count, commands[0]);
-			/* exit code is 127 */
-			free_cmds(commands);
-			continue;
+			/* check with the PATH and make final decisions */
+			get_cmd_path(&commands[0]);
+
+			/* well, dang it, it doesn't exist for sure */
+			if (commands != NULL && access(commands[0], X_OK) == -1)
+			{
+				fprintf(stderr, "%s: %lu: %s: not found\n", argv[0], cmd_count, commands[0]);
+	
+				/* error code is 127 */
+				free_cmds(commands);
+				continue;
+			}
 		}	
 		child = fork();
 
@@ -89,6 +98,44 @@ int main(int argc, char *argv[])
 	return (0);
 }
 
+
+void get_cmd_path(char **pathname)
+{
+	char *token = NULL, *path = NULL, *path_dir, *dup_str;
+	if (*pathname == NULL || pathname == NULL)
+		return;
+	
+	path_dir = getenv("PATH");
+	if (path_dir == NULL)
+		return;
+
+	dup_str = strdup(path_dir);
+	token = strtok(dup_str, ":");
+	
+	while (token != NULL)
+	{
+		path = malloc(sizeof(char) * (strlen(*pathname) + strlen(token) + 2));
+		if (path == NULL)
+		{
+			fprintf(stderr, "Memory alloaction failed\n");
+			return;
+		}
+		sprintf(path, "%s/%s", token, *pathname);
+		
+		if (access(path, X_OK) == 0)
+		{
+			free(*pathname);
+			*pathname = strdup(path);
+			free(path);
+			break;
+		}
+		
+		free(path);
+		token = strtok(NULL, ":");
+	}
+	free(dup_str);
+
+}
 void free_cmds(char **cmds)
 {
 	size_t i;
