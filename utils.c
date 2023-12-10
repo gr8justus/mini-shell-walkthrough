@@ -1,5 +1,21 @@
 #include "main.h"
 
+/**
+ * get_cmd_path - gets the full path to a command if it's valid and exist in
+ * the PATH list of directories
+ * @command: a pointer to the string containing the command to get full path
+ * for
+ *
+ * Note: The string is modified in place and it is recommended to pass the
+ * address of the string. This is NOT a string array function prototype, don't
+ * be fooled by the double pointer in the function prototype.
+ *
+ * Example: get_cmd_path(&command); where @command is a string containing the
+ * command to get the full path for. @command could be 'ls' at the time of
+ * function call. Upon return, the @command string will be updated to whatever
+ * path the command 'ls' is executable at. Common examples are: '/usr/bin/ls'
+ * and '/bin/ls'
+ */
 void get_cmd_path(char **command)
 {
 	char *dir = NULL, *path = NULL, *path_dir, *dup_str;
@@ -26,11 +42,6 @@ void get_cmd_path(char **command)
 		/* build up the full command path and check for execute permissions */
 		sprintf(path, "%s/%s", dir, *command);
 
-		/*
-		 * Uncomment the line below to get debug messages on which path is
-		 * being check at any given moment
-		 */
-
 		/* printf("Debug [get_cmd_path]: Checking [%s]\n", path); */
 
 		if (access(path, X_OK) == 0)
@@ -48,6 +59,12 @@ void get_cmd_path(char **command)
 
 }
 
+/**
+ * free_cmds - handles the deallocation of the string array containing the
+ * tokenized input string.
+ * @cmds: the string array of commands to free. It is recommended to call this
+ * function after each command execution
+ */
 void free_cmds(char **cmds)
 {
 	size_t i;
@@ -60,6 +77,13 @@ void free_cmds(char **cmds)
 	free(cmds);
 }
 
+/**
+ * tokenize - returns a string array of strings based on a delimiter
+ * @str: the string to tokenize
+ * @delim: the delimiter
+ *
+ * Return: a NULL-terminated string array of words
+ */
 char **tokenize(char *str, const char *delim)
 {
 	char **commands = NULL, *token, *dup_str;
